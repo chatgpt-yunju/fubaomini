@@ -15,6 +15,27 @@ const Poster = ({
   });
   const [isGenerating, setIsGenerating] = useState(false);
   const canvasRef = useRef(null);
+
+  // 从localStorage加载真实数据
+  React.useEffect(() => {
+    try {
+      const stats = JSON.parse(localStorage.getItem('fortuneStats') || '{}');
+      const records = JSON.parse(localStorage.getItem('fortuneRecords') || '[]');
+      const totalScore = stats.totalScore || 75;
+      const level = stats.level || '上品·福报丰厚';
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+      setPosterData({
+        totalScore,
+        level,
+        date: dateStr,
+        name: '常云举',
+        quote: '积善之家，必有余庆；积不善之家，必有余殃。'
+      });
+    } catch (error) {
+      console.error('加载海报数据失败:', error);
+    }
+  }, []);
   const getLevelColor = score => {
     if (score >= 90) return {
       color: '#8B5CF6',

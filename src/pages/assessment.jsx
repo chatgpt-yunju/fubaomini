@@ -267,6 +267,52 @@ const Assessment = ({
       <div className="mt-6">
         <button onClick={() => {
         // 保存评分逻辑
+        const now = new Date();
+        const newRecord = {
+          id: Date.now(),
+          type: '自评',
+          category: '基础评分',
+          content: `释门${buddhismTotal}分，儒门${confucianTotal}分，道门${taoistTotal}分`,
+          score: grandTotal - 75,
+          // 转换为相对分数
+          date: now.toISOString().split('T')[0],
+          time: now.toTimeString().split(' ')[0].substring(0, 5)
+        };
+        const existingRecords = JSON.parse(localStorage.getItem('fortuneRecords') || '[]');
+        existingRecords.push(newRecord);
+        localStorage.setItem('fortuneRecords', JSON.stringify(existingRecords));
+
+        // 更新今日福报
+        const today = now.toISOString().split('T')[0];
+        const todayRecords = existingRecords.filter(record => record.date === today);
+        const todayTotal = todayRecords.reduce((sum, record) => sum + record.score, 0);
+
+        // 更新总分
+        const baseScore = 75;
+        const recordsTotal = existingRecords.reduce((sum, record) => sum + record.score, 0);
+        const calculatedTotal = Math.max(0, Math.min(100, baseScore + recordsTotal));
+
+        // 更新等级
+        let level = '下下品·福报亏空';
+        if (calculatedTotal >= 90) {
+          level = '上上品·福报圆满';
+        } else if (calculatedTotal >= 75) {
+          level = '上品·福报丰厚';
+        } else if (calculatedTotal >= 60) {
+          level = '中品·福报平稳';
+        } else if (calculatedTotal >= 30) {
+          level = '下品·福报薄弱';
+        }
+
+        // 保存到localStorage供其他页面使用
+        localStorage.setItem('fortuneStats', JSON.stringify({
+          totalScore: calculatedTotal,
+          todayScore: todayTotal,
+          level: level
+        }));
+
+        // 触发storage事件，让其他页面更新
+        window.dispatchEvent(new Event('storage'));
         $w.utils.navigateTo({
           pageId: 'home'
         });

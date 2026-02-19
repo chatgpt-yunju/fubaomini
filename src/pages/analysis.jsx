@@ -17,63 +17,90 @@ const Analysis = ({
     suggestions: []
   });
   useEffect(() => {
-    // 模拟数据加载
-    const mockWeeklyData = [{
-      date: '02-13',
-      score: 68
-    }, {
-      date: '02-14',
-      score: 72
-    }, {
-      date: '02-15',
-      score: 70
-    }, {
-      date: '02-16',
-      score: 65
-    }, {
-      date: '02-17',
-      score: 78
-    }, {
-      date: '02-18',
-      score: 73
-    }, {
-      date: '02-19',
-      score: 75
-    }];
-    const mockCategoryData = [{
-      name: '释门六度',
-      value: 22,
-      color: '#EF4444'
-    }, {
-      name: '儒门修齐',
-      value: 28,
-      color: '#F59E0B'
-    }, {
-      name: '道门守真',
-      value: 25,
-      color: '#10B981'
-    }];
-    const mockSuggestions = [{
-      type: '优势',
-      content: '您在儒门修齐方面表现优秀，特别是修身和齐家方面。',
-      icon: '👍'
-    }, {
-      type: '改进',
-      content: '建议加强释门六度中的禅定修行，提升专注力和内心平静。',
-      icon: '🧘'
-    }, {
-      type: '目标',
-      content: '下月目标：总分达到80分，重点提升智慧和精进两个维度。',
-      icon: '🎯'
-    }];
-    setAnalysisData({
-      totalScore: 75,
-      trend: 'up',
-      weeklyData: mockWeeklyData,
-      categoryData: mockCategoryData,
-      level: '上品·福报丰厚',
-      suggestions: mockSuggestions
-    });
+    // 从localStorage加载真实数据
+    const loadRealData = () => {
+      try {
+        const stats = JSON.parse(localStorage.getItem('fortuneStats') || '{}');
+        const records = JSON.parse(localStorage.getItem('fortuneRecords') || '[]');
+        const totalScore = stats.totalScore || 75;
+        const level = stats.level || '上品·福报丰厚';
+
+        // 计算最近7天的数据
+        const today = new Date();
+        const weeklyData = [];
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(today);
+          date.setDate(date.getDate() - i);
+          const dateStr = date.toISOString().split('T')[0];
+          const dayRecords = records.filter(record => record.date === dateStr);
+          const dayScore = dayRecords.reduce((sum, record) => sum + record.score, 0);
+          const totalDayScore = Math.max(0, Math.min(100, 75 + dayScore));
+          weeklyData.push({
+            date: `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+            score: totalDayScore
+          });
+        }
+
+        // 计算三教分布（基于记录类型）
+        const categoryData = [{
+          name: '释门六度',
+          value: records.filter(r => r.type === '益福' || r.type === '损福').reduce((sum, r) => sum + Math.abs(r.score), 0),
+          color: '#EF4444'
+        }, {
+          name: '儒门修齐',
+          value: records.filter(r => r.type === '自评').reduce((sum, r) => sum + Math.abs(r.score), 0),
+          color: '#F59E0B'
+        }, {
+          name: '道门守真',
+          value: records.filter(r => r.type === '补过').reduce((sum, r) => sum + Math.abs(r.score), 0),
+          color: '#10B981'
+        }];
+
+        // 生成建议
+        const suggestions = [{
+          type: '优势',
+          content: `您在${level}方面表现优秀，继续保持。`,
+          icon: '👍'
+        }, {
+          type: '改进',
+          content: '建议加强日常修行，多行善事以提升福报。',
+          icon: '🧘'
+        }, {
+          type: '目标',
+          content: `下月目标：总分达到${Math.min(100, totalScore + 5)}分，重点提升智慧和精进两个维度。`,
+          icon: '🎯'
+        }];
+        setAnalysisData({
+          totalScore,
+          trend: 'up',
+          weeklyData,
+          categoryData,
+          level,
+          suggestions
+        });
+      } catch (error) {
+        console.error('加载分析数据失败:', error);
+        // 使用默认数据
+        setAnalysisData({
+          totalScore: 75,
+          trend: 'up',
+          weeklyData: [],
+          categoryData: [],
+          level: '上品·福报丰厚',
+          suggestions: []
+        });
+      }
+    };
+    loadRealData();
+
+    // 监听storage变化
+    const handleStorageChange = () => {
+      loadRealData();
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, [timeRange]);
   const getLevelInfo = score => {
     if (score >= 90) return {
