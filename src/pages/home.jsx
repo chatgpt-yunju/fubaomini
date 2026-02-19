@@ -143,8 +143,7 @@ const Home = ({
           return fallbackAnalysis(message);
         }
       } else {
-        console.warn('云函数调用失败，使用备用方案');
-        return fallbackAnalysis(message);
+        throw new Error('云函数调用失败');
       }
     } catch (error) {
       console.error('调用deepseek-v3.2失败:', error);
@@ -341,7 +340,7 @@ const Home = ({
         const botResponse = {
           id: Date.now() + 1,
           type: 'bot',
-          content: `${analysis.analysis}\n\n💡 修持建议：\n${analysis.advice}\n\n如果您希望我为您的行为进行福报评分，请明确告诉我您做了什么善事或需要改进的地方。`,
+          content: `${analysis.analysis}\n\n💡 修持建议：\n${analysis.advice}`,
           timestamp: new Date()
         };
         setMessages(prev => [...prev, botResponse]);

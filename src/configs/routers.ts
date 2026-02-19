@@ -4,6 +4,7 @@ import RECORD from '../pages/record.jsx';
 import HISTORY from '../pages/history.jsx';
 import ANALYSIS from '../pages/analysis.jsx';
 import POSTER from '../pages/poster.jsx';
+import CERTIFICATE from '../pages/certificate.jsx';
 export const routers = [{
   id: "home",
   component: HOME
@@ -22,4 +23,7 @@ export const routers = [{
 }, {
   id: "poster",
   component: POSTER
+}, {
+  id: "certificate",
+  component: CERTIFICATE
 }]

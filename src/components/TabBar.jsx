@@ -20,6 +20,10 @@ const TabBar = ({
     name: '记录',
     icon: Plus
   }, {
+    id: 'certificate',
+    name: '证书',
+    icon: Award
+  }, {
     id: 'analysis',
     name: '复盘',
     icon: TrendingUp
