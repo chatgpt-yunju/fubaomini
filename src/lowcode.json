@@ -1,10 +1,4 @@
 {
   "main": "home",
-  "items": [
-    {
-      "id": "certificate",
-      "path": "/certificate",
-      "component": "certificate"
-    }
-  ]
+  "items": []
 }

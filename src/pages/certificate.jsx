@@ -1,216 +1,277 @@
 // @ts-ignore;
 import React, { useState, useEffect } from 'react';
 // @ts-ignore;
-import { Award, Calendar, Star, Download, Share2 } from 'lucide-react';
+import { Award, Star, Trophy, Medal, Crown, Sparkles } from 'lucide-react';
 
 const Certificate = ({
   $w
 }) => {
-  const [certificateData, setCertificateData] = useState({
+  const [userStats, setUserStats] = useState({
+    totalScore: 75,
     level: '上品·福报丰厚',
-    score: 75,
-    date: '2024年2月19日',
-    certificateId: 'FC-2024-001',
-    description: '此证书证明持有人在儒释道三教修持中表现优秀，福报深厚，特此证明。'
+    todayScore: 0,
+    recordsCount: 0
   });
+  const [certificates, setCertificates] = useState([]);
+  const [achievements, setAchievements] = useState([]);
 
-  // 从localStorage加载真实数据
+  // 加载用户数据
   useEffect(() => {
-    try {
-      const stats = JSON.parse(localStorage.getItem('fortuneStats') || '{}');
-      const records = JSON.parse(localStorage.getItem('fortuneRecords') || '[]');
-      const totalScore = stats.totalScore || 75;
-      const level = stats.level || '上品·福报丰厚';
-      const today = new Date();
-      const dateStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+    const loadUserData = () => {
+      try {
+        const stats = JSON.parse(localStorage.getItem('fortuneStats') || '{}');
+        const records = JSON.parse(localStorage.getItem('fortuneRecords') || '[]');
+        setUserStats({
+          totalScore: stats.totalScore || 75,
+          level: stats.level || '上品·福报丰厚',
+          todayScore: stats.todayScore || 0,
+          recordsCount: records.length
+        });
 
-      // 生成证书编号
-      const certificateId = `FC-${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}-${String(records.length + 1).padStart(3, '0')}`;
-      setCertificateData({
-        level,
-        score: totalScore,
-        date: dateStr,
-        certificateId,
-        description: getLevelDescription(level)
-      });
-    } catch (error) {
-      console.error('加载证书数据失败:', error);
-    }
-  }, []);
-  const getLevelDescription = level => {
-    const descriptions = {
-      '上上品·福报圆满': '此证书证明持有人在儒释道三教修持中已达到圆满境界，福报深厚，德行圆满，特此证明。',
-      '上品·福报丰厚': '此证书证明持有人在儒释道三教修持中表现优秀，福报深厚，特此证明。',
-      '中品·福报平稳': '此证书证明持有人在儒释道三教修持中稳步提升，福报平稳，特此证明。',
-      '下品·福报薄弱': '此证书证明持有人在儒释道三教修持中已有良好开端，继续努力，福报可期。',
-      '下下品·福报亏空': '此证书证明持有人已开始儒释道三教修持之旅，愿持之以恒，必有收获。'
-    };
-    return descriptions[level] || descriptions['上品·福报丰厚'];
-  };
-  const getLevelColor = level => {
-    const colors = {
-      '上上品·福报圆满': 'from-yellow-400 to-orange-500',
-      '上品·福报丰厚': 'from-amber-400 to-yellow-500',
-      '中品·福报平稳': 'from-blue-400 to-indigo-500',
-      '下品·福报薄弱': 'from-gray-400 to-gray-500',
-      '下下品·福报亏空': 'from-red-400 to-red-500'
-    };
-    return colors[level] || colors['上品·福报丰厚'];
-  };
-  const getStarCount = score => {
-    if (score >= 90) return 5;
-    if (score >= 75) return 4;
-    if (score >= 60) return 3;
-    if (score >= 30) return 2;
-    return 1;
-  };
-  const handleDownload = () => {
-    // 模拟下载证书
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = 800;
-    canvas.height = 600;
-
-    // 绘制证书背景
-    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    gradient.addColorStop(0, '#fef3c7');
-    gradient.addColorStop(1, '#f59e0b');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // 绘制边框
-    ctx.strokeStyle = '#92400e';
-    ctx.lineWidth = 8;
-    ctx.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
-
-    // 绘制标题
-    ctx.fillStyle = '#92400e';
-    ctx.font = 'bold 48px serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('福报等级证书', canvas.width / 2, 120);
-
-    // 绘制等级
-    ctx.font = 'bold 36px serif';
-    ctx.fillText(certificateData.level, canvas.width / 2, 200);
-
-    // 绘制分数
-    ctx.font = '24px serif';
-    ctx.fillText(`总分：${certificateData.score}分`, canvas.width / 2, 250);
-
-    // 绘制描述
-    ctx.font = '18px serif';
-    const lines = certificateData.description.split('。');
-    lines.forEach((line, index) => {
-      if (line.trim()) {
-        ctx.fillText(line.trim() + '。', canvas.width / 2, 320 + index * 30);
+        // 生成证书和成就
+        generateCertificates(stats.totalScore || 75, records.length);
+        generateAchievements(records);
+      } catch (error) {
+        console.error('加载用户数据失败:', error);
       }
-    });
+    };
+    loadUserData();
 
-    // 绘制日期和证书编号
-    ctx.font = '16px serif';
-    ctx.fillText(`证书编号：${certificateData.certificateId}`, canvas.width / 2, 480);
-    ctx.fillText(`颁发日期：${certificateData.date}`, canvas.width / 2, 510);
+    // 监听数据变化
+    const handleStorageChange = () => {
+      loadUserData();
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
-    // 下载
-    const link = document.createElement('a');
-    link.download = `福报证书_${certificateData.certificateId}.png`;
-    link.href = canvas.toDataURL();
-    link.click();
-  };
-  const handleShare = () => {
-    // 模拟分享功能
-    if (navigator.share) {
-      navigator.share({
-        title: '我的福报等级证书',
-        text: `我获得了${certificateData.level}证书，总分${certificateData.score}分！`,
-        url: window.location.href
+  // 生成证书
+  const generateCertificates = (score, recordCount) => {
+    const certs = [];
+
+    // 等级证书
+    if (score >= 90) {
+      certs.push({
+        id: 'supreme',
+        title: '上上品·福报圆满证书',
+        description: '恭喜您达到福报圆满境界',
+        icon: Crown,
+        color: 'from-yellow-400 to-orange-500',
+        bgColor: 'bg-gradient-to-br from-yellow-50 to-orange-50',
+        borderColor: 'border-yellow-300'
       });
-    } else {
-      // 复制到剪贴板
-      const shareText = `我获得了${certificateData.level}证书，总分${certificateData.score}分！证书编号：${certificateData.certificateId}`;
-      navigator.clipboard.writeText(shareText);
-      alert('证书信息已复制到剪贴板');
+    } else if (score >= 75) {
+      certs.push({
+        id: 'superior',
+        title: '上品·福报丰厚证书',
+        description: '恭喜您达到福报丰厚境界',
+        icon: Trophy,
+        color: 'from-emerald-400 to-teal-500',
+        bgColor: 'bg-gradient-to-br from-emerald-50 to-teal-50',
+        borderColor: 'border-emerald-300'
+      });
+    } else if (score >= 60) {
+      certs.push({
+        id: 'middle',
+        title: '中品·福报平稳证书',
+        description: '恭喜您达到福报平稳境界',
+        icon: Medal,
+        color: 'from-blue-400 to-indigo-500',
+        bgColor: 'bg-gradient-to-br from-blue-50 to-indigo-50',
+        borderColor: 'border-blue-300'
+      });
+    } else if (score >= 30) {
+      certs.push({
+        id: 'inferior',
+        title: '下品·福报薄弱证书',
+        description: '恭喜您达到福报薄弱境界',
+        icon: Award,
+        color: 'from-gray-400 to-slate-500',
+        bgColor: 'bg-gradient-to-br from-gray-50 to-slate-50',
+        borderColor: 'border-gray-300'
+      });
     }
+
+    // 记录数量证书
+    if (recordCount >= 100) {
+      certs.push({
+        id: 'centurion',
+        title: '百善记录者',
+        description: '记录了100次以上的善行',
+        icon: Star,
+        color: 'from-purple-400 to-pink-500',
+        bgColor: 'bg-gradient-to-br from-purple-50 to-pink-50',
+        borderColor: 'border-purple-300'
+      });
+    } else if (recordCount >= 50) {
+      certs.push({
+        id: 'fifty',
+        title: '五十善行记录者',
+        description: '记录了50次以上的善行',
+        icon: Star,
+        color: 'from-indigo-400 to-purple-500',
+        bgColor: 'bg-gradient-to-br from-indigo-50 to-purple-50',
+        borderColor: 'border-indigo-300'
+      });
+    } else if (recordCount >= 10) {
+      certs.push({
+        id: 'ten',
+        title: '十善记录者',
+        description: '记录了10次以上的善行',
+        icon: Star,
+        color: 'from-cyan-400 to-blue-500',
+        bgColor: 'bg-gradient-to-br from-cyan-50 to-blue-50',
+        borderColor: 'border-cyan-300'
+      });
+    }
+    setCertificates(certs);
   };
-  return <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 p-4 pb-20">
-      {/* 页面标题 */}
-      <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">福报等级证书</h1>
-        <p className="text-gray-600">您的修持成果认证</p>
+
+  // 生成成就
+  const generateAchievements = records => {
+    const achievements = [];
+
+    // 连续记录天数
+    const today = new Date();
+    let consecutiveDays = 0;
+    for (let i = 0; i < 30; i++) {
+      const checkDate = new Date(today);
+      checkDate.setDate(checkDate.getDate() - i);
+      const dateStr = checkDate.toISOString().split('T')[0];
+      const hasRecord = records.some(record => record.date === dateStr);
+      if (hasRecord) {
+        consecutiveDays++;
+      } else {
+        break;
+      }
+    }
+    if (consecutiveDays >= 7) {
+      achievements.push({
+        id: 'week',
+        title: '一周坚持',
+        description: `连续${consecutiveDays}天记录善行`,
+        icon: Sparkles,
+        color: 'text-emerald-600'
+      });
+    }
+
+    // 最高单日分数
+    const dailyScores = {};
+    records.forEach(record => {
+      if (!dailyScores[record.date]) {
+        dailyScores[record.date] = 0;
+      }
+      dailyScores[record.date] += record.score;
+    });
+    const maxDailyScore = Math.max(...Object.values(dailyScores));
+    if (maxDailyScore >= 20) {
+      achievements.push({
+        id: 'peak',
+        title: '单日高峰',
+        description: `单日最高获得${maxDailyScore}分`,
+        icon: Trophy,
+        color: 'text-amber-600'
+      });
+    }
+    setAchievements(achievements);
+  };
+  return <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 pb-20">
+      {/* 头部 */}
+      <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-6">
+        <h1 className="text-2xl font-bold mb-2">福报证书</h1>
+        <p className="text-amber-100">您的修行成果与荣誉见证</p>
       </div>
 
-      {/* 证书主体 */}
-      <div className="max-w-md mx-auto">
-        <div className={`bg-gradient-to-br ${getLevelColor(certificateData.level)} rounded-2xl p-8 shadow-2xl border-4 border-white relative overflow-hidden`}>
-          {/* 装饰性背景 */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white bg-opacity-10 rounded-full -translate-y-16 translate-x-16"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white bg-opacity-10 rounded-full translate-y-12 -translate-x-12"></div>
-          
-          {/* 证书内容 */}
-          <div className="relative z-10 text-center text-white">
-            {/* 奖杯图标 */}
-            <div className="mb-4">
-              <Award className="w-16 h-16 mx-auto text-white" />
+      <div className="p-6 space-y-8">
+        {/* 用户状态 */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">当前状态</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-amber-600">{userStats.totalScore}</div>
+              <div className="text-sm text-gray-500">总分</div>
             </div>
-            
-            {/* 证书标题 */}
-            <h2 className="text-2xl font-bold mb-2">福报等级证书</h2>
-            
-            {/* 等级 */}
-            <div className="mb-4">
-              <h3 className="text-3xl font-bold mb-2">{certificateData.level}</h3>
-              
-              {/* 星级评分 */}
-              <div className="flex justify-center gap-1 mb-2">
-                {[...Array(5)].map((_, index) => <Star key={index} className={`w-6 h-6 ${index < getStarCount(certificateData.score) ? 'text-yellow-300 fill-current' : 'text-white text-opacity-30'}`} />)}
-              </div>
-              
-              <p className="text-lg opacity-90">总分：{certificateData.score}分</p>
+            <div className="text-center">
+              <div className="text-lg font-semibold text-emerald-600">{userStats.level}</div>
+              <div className="text-sm text-gray-500">等级</div>
             </div>
-            
-            {/* 描述 */}
-            <div className="mb-6">
-              <p className="text-sm opacity-90 leading-relaxed">
-                {certificateData.description}
-              </p>
+            <div className="text-center">
+              <div className="text-xl font-semibold text-blue-600">{userStats.todayScore}</div>
+              <div className="text-sm text-gray-500">今日分数</div>
             </div>
-            
-            {/* 证书信息 */}
-            <div className="border-t border-white border-opacity-30 pt-4">
-              <div className="flex justify-between items-center text-sm opacity-90">
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  <span>{certificateData.date}</span>
-                </div>
-                <div className="text-xs">
-                  {certificateData.certificateId}
-                </div>
-              </div>
+            <div className="text-center">
+              <div className="text-xl font-semibold text-purple-600">{userStats.recordsCount}</div>
+              <div className="text-sm text-gray-500">记录总数</div>
             </div>
           </div>
         </div>
-        
-        {/* 操作按钮 */}
-        <div className="mt-6 flex gap-3">
-          <button onClick={handleDownload} className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl p-4 font-medium transition-colors flex items-center justify-center gap-2">
-            <Download className="w-5 h-5" />
-            下载证书
-          </button>
-          <button onClick={handleShare} className="flex-1 bg-blue-500 hover:bg-blue-600 text-white rounded-xl p-4 font-medium transition-colors flex items-center justify-center gap-2">
-            <Share2 className="w-5 h-5" />
-            分享证书
-          </button>
+
+        {/* 证书展示 */}
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">获得证书</h2>
+          {certificates.length > 0 ? <div className="grid gap-4">
+              {certificates.map(cert => {
+            const Icon = cert.icon;
+            return <div key={cert.id} className={`${cert.bgColor} ${cert.borderColor} border-2 rounded-2xl p-6 shadow-sm`}>
+                    <div className="flex items-center gap-4">
+                      <div className={`p-3 rounded-full bg-gradient-to-r ${cert.color} text-white`}>
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-800">{cert.title}</h3>
+                        <p className="text-sm text-gray-600">{cert.description}</p>
+                      </div>
+                    </div>
+                  </div>;
+          })}
+            </div> : <div className="text-center py-8 text-gray-500">
+              <Award className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p>暂无证书，继续修行获得更多荣誉！</p>
+            </div>}
         </div>
-        
-        {/* 证书说明 */}
-        <div className="mt-6 bg-white rounded-xl p-4 shadow-sm">
-          <h4 className="font-medium text-gray-800 mb-2">证书说明</h4>
-          <ul className="text-sm text-gray-600 space-y-1">
-            <li>• 证书基于您的福报评分自动生成</li>
-            <li>• 分数越高，证书等级越高</li>
-            <li>• 可下载保存或分享给朋友</li>
-            <li>• 证书编号唯一，请妥善保存</li>
-          </ul>
+
+        {/* 成就徽章 */}
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">成就徽章</h2>
+          {achievements.length > 0 ? <div className="grid grid-cols-2 gap-4">
+              {achievements.map(achievement => {
+            const Icon = achievement.icon;
+            return <div key={achievement.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+                    <div className="text-center">
+                      <Icon className={`w-8 h-8 mx-auto mb-2 ${achievement.color}`} />
+                      <h3 className="font-medium text-gray-800 text-sm">{achievement.title}</h3>
+                      <p className="text-xs text-gray-500 mt-1">{achievement.description}</p>
+                    </div>
+                  </div>;
+          })}
+            </div> : <div className="text-center py-8 text-gray-500">
+              <Trophy className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p>暂无成就，继续努力获得更多徽章！</p>
+            </div>}
+        </div>
+
+        {/* 分享按钮 */}
+        <div className="text-center">
+          <button onClick={() => {
+          // 分享功能
+          if (navigator.share) {
+            navigator.share({
+              title: '我的福报证书',
+              text: `我在福报量化应用中已达到${userStats.level}，总分${userStats.totalScore}分！`,
+              url: window.location.href
+            });
+          } else {
+            // 复制到剪贴板
+            const text = `我在福报量化应用中已达到${userStats.level}，总分${userStats.totalScore}分！`;
+            navigator.clipboard.writeText(text).then(() => {
+              alert('已复制到剪贴板');
+            });
+          }
+        }} className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-8 py-3 rounded-xl font-medium hover:from-amber-600 hover:to-orange-600 transition-colors">
+            分享我的证书
+          </button>
         </div>
       </div>
     </div>;
