@@ -17,6 +17,7 @@ const Home = ({
   const [totalScore, setTotalScore] = useState(0);
   const [todayScore, setTodayScore] = useState(0);
   const [level, setLevel] = useState('');
+  const [pendingAnalysis, setPendingAnalysis] = useState(null); // 待确认的评分结果
   const messagesEndRef = useRef(null);
 
   // 从localStorage加载数据
@@ -317,15 +318,33 @@ const Home = ({
     try {
       // 调用AI分析
       const analysis = await analyzeMessage(inputMessage);
-      const record = saveRecord(analysis, inputMessage);
-      const botResponse = {
-        id: Date.now() + 1,
-        type: 'bot',
-        content: `${analysis.analysis}\n\n📊 评分结果：\n• 类型：${analysis.type}\n• 分类：${analysis.category}\n• 分数：${analysis.score > 0 ? '+' : ''}${analysis.score}分\n\n💡 修持建议：\n${analysis.advice}\n\n当前总分：${Math.max(0, Math.min(100, 75 + record.score))}分（${getCurrentLevel(75 + record.score)}）`,
-        timestamp: new Date(),
-        score: analysis.score
-      };
-      setMessages(prev => [...prev, botResponse]);
+
+      // 检查是否需要评分（分数不为0）
+      if (analysis.score !== 0) {
+        // 显示评分结果，等待用户确认
+        setPendingAnalysis({
+          analysis,
+          originalMessage: inputMessage
+        });
+        const botResponse = {
+          id: Date.now() + 1,
+          type: 'bot',
+          content: `${analysis.analysis}\n\n📊 评分结果：\n• 类型：${analysis.type}\n• 分类：${analysis.category}\n• 分数：${analysis.score > 0 ? '+' : ''}${analysis.score}分\n\n💡 修持建议：\n${analysis.advice}\n\n请确认是否保存此评分记录？`,
+          timestamp: new Date(),
+          score: analysis.score,
+          needsConfirmation: true
+        };
+        setMessages(prev => [...prev, botResponse]);
+      } else {
+        // 普通聊天，直接显示结果
+        const botResponse = {
+          id: Date.now() + 1,
+          type: 'bot',
+          content: `${analysis.analysis}\n\n💡 修持建议：\n${analysis.advice}`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, botResponse]);
+      }
     } catch (error) {
       console.error('AI分析失败:', error);
       const errorResponse = {
@@ -338,6 +357,38 @@ const Home = ({
     } finally {
       setIsTyping(false);
     }
+  };
+
+  // 确认保存评分
+  const confirmScore = () => {
+    if (!pendingAnalysis) return;
+    const {
+      analysis,
+      originalMessage
+    } = pendingAnalysis;
+    const record = saveRecord(analysis, originalMessage);
+
+    // 发送确认消息
+    const confirmMessage = {
+      id: Date.now(),
+      type: 'bot',
+      content: `✅ 已保存评分记录！\n\n当前总分：${Math.max(0, Math.min(100, 75 + record.score))}分（${getCurrentLevel(75 + record.score)}）\n\n继续与我交流您的日常行为吧！`,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, confirmMessage]);
+    setPendingAnalysis(null);
+  };
+
+  // 取消评分
+  const cancelScore = () => {
+    const cancelMessage = {
+      id: Date.now(),
+      type: 'bot',
+      content: '好的，评分记录已取消。您可以继续与我交流，或者重新描述您的行为。',
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, cancelMessage]);
+    setPendingAnalysis(null);
   };
 
   // 获取当前等级
@@ -414,6 +465,14 @@ const Home = ({
                 {message.score && <div className={`mt-2 text-sm font-medium ${getScoreColor(message.score)}`}>
                     评分：{message.score > 0 ? '+' : ''}{message.score}分
                   </div>}
+                {message.needsConfirmation && <div className="mt-3 flex gap-2">
+                    <button onClick={confirmScore} className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm hover:bg-emerald-600 transition-colors">
+                      确认保存
+                    </button>
+                    <button onClick={cancelScore} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-400 transition-colors">
+                      取消
+                    </button>
+                  </div>}
               </div>
             </div>
           </div>)}
@@ -441,12 +500,14 @@ const Home = ({
 
       {/* 输入区域 */}
       <div className="bg-white border-t border-gray-200 p-4 pb-20">
-        <div className="flex gap-3">
-          <input type="text" value={inputMessage} onChange={e => setInputMessage(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendMessage()} placeholder="请描述您今天的行为、想法或遇到的挑战..." className="flex-1 p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" disabled={isTyping} />
-          <button onClick={sendMessage} disabled={!inputMessage.trim() || isTyping} className="bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 text-white p-3 rounded-xl transition-colors">
-            <Send className="w-5 h-5" />
-          </button>
-        </div>
+        {pendingAnalysis ? <div className="text-center text-gray-500 text-sm">
+            请先确认或取消当前的评分记录
+          </div> : <div className="flex gap-3">
+            <input type="text" value={inputMessage} onChange={e => setInputMessage(e.target.value)} onKeyPress={e => e.key === 'Enter' && sendMessage()} placeholder="请描述您今天的行为、想法或遇到的挑战..." className="flex-1 p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500" disabled={isTyping} />
+            <button onClick={sendMessage} disabled={!inputMessage.trim() || isTyping} className="bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 text-white p-3 rounded-xl transition-colors">
+              <Send className="w-5 h-5" />
+            </button>
+          </div>}
       </div>
 
       {/* 底部导航 */}
