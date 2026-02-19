@@ -9,15 +9,15 @@ const Assessment = ({
   const [activeTab, setActiveTab] = useState('buddhism');
   const [scores, setScores] = useState({
     // 释门六度
-    generosity: 3,
+    generosity: 4,
     // 布施
     discipline: 4,
     // 持戒
-    patience: 3,
+    patience: 4,
     // 忍辱
     diligence: 4,
     // 精进
-    meditation: 3,
+    meditation: 4,
     // 禅定
     wisdom: 4,
     // 智慧
@@ -25,19 +25,19 @@ const Assessment = ({
     // 儒门修齐
     selfCultivation: 4,
     // 修身
-    familyHarmony: 3,
+    familyHarmony: 4,
     // 齐家
-    leadership: 3,
+    leadership: 4,
     // 治国
     service: 4,
     // 平天下
 
     // 道门守真
-    taoMethod: 3,
+    taoMethod: 4,
     // 道法
     naturalness: 4,
     // 自然
-    tranquility: 3 // 守静
+    tranquility: 4 // 守静
   });
   const handleScoreChange = (key, value) => {
     setScores(prev => ({
@@ -287,7 +287,7 @@ const Assessment = ({
         const todayRecords = existingRecords.filter(record => record.date === today);
         const todayTotal = todayRecords.reduce((sum, record) => sum + record.score, 0);
 
-        // 更新总分
+        // 更新总分 - 修复计算逻辑
         const baseScore = 75;
         const recordsTotal = existingRecords.reduce((sum, record) => sum + record.score, 0);
         const calculatedTotal = Math.max(0, Math.min(100, baseScore + recordsTotal));
