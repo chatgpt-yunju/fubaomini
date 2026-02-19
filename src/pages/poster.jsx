@@ -7,7 +7,7 @@ const Poster = ({
   $w
 }) => {
   const [posterData, setPosterData] = useState({
-    totalScore: 75,
+    totalScore: 78,
     level: '上品·福报丰厚',
     date: '2024年2月19日',
     name: '常云举',
@@ -21,7 +21,7 @@ const Poster = ({
     try {
       const stats = JSON.parse(localStorage.getItem('fortuneStats') || '{}');
       const records = JSON.parse(localStorage.getItem('fortuneRecords') || '[]');
-      const totalScore = stats.totalScore || 75;
+      const totalScore = stats.totalScore || 78;
       const level = stats.level || '上品·福报丰厚';
       const today = new Date();
       const dateStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
